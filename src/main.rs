@@ -83,6 +83,7 @@ impl Process {
 //     let mut completed: Vec<Process> = vec![];
 //     todo!()
 // }
+
 pub fn fifo(mut procs: Vec<Process>) -> Vec<Process> {
     procs.sort_by(|a, b| a.arrival.cmp(&b.arrival));
     let mut clock = procs[0].arrival;
@@ -98,4 +99,19 @@ pub fn fifo(mut procs: Vec<Process>) -> Vec<Process> {
         }
     }
     completed
+}
+
+pub fn sjf(mut procs: Vec<Process>, mut completed: Vec<Process>) -> Vec<Process> {
+    procs.sort_by(|a, b| a.arrival.cmp(&b.arrival));
+
+    let mut clock: i32 = 0;
+    let mut completed_procs: Vec<Process> = vec![];
+
+    while procs.len() > 0 {
+        if procs.is_empty() {
+            completed_procs
+        } else {
+            
+        }
+    }
 }
