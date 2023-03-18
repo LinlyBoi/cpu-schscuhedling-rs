@@ -34,7 +34,7 @@ fn main() {
         num += 1;
     }
     println!("sorting!");
-    let sorted = fifo(processes);
+    let sorted = sjf(processes, vec![], 0);
     println!("You've entered: ");
     for proc in sorted {
         println!("{:#?}", proc)
@@ -92,28 +92,32 @@ pub fn fifo(mut procs: Vec<Process>) -> Vec<Process> {
             (done_proc, clock) = proc.one_shot(clock);
             done_proc.turnaround = done_proc.calc_turn();
             done_proc.waiting = done_proc.calc_wait();
-            println!("{}", proc.remaining);
             completed.push(done_proc);
         }
     }
     completed
 }
 
-pub fn sjf(mut procs: Vec<Process>, mut completed: Vec<Process>, clock_update: i32) -> Vec<Process> {
-    procs.sort_unstable_by_key(|proc| (proc.arrival, proc.burst));
-
-    let mut clock: i32 = clock_update;
-    let mut completed_procs: Vec<Process> = vec![];
+pub fn sjf(mut procs: Vec<Process>, mut completed: Vec<Process>, mut clock: i32) -> Vec<Process> {
+    procs.sort_unstable_by_key(|proc| (proc.burst, proc.arrival));
 
     if procs.is_empty() {
-        completed_procs
+        completed
     } else {
-        if procs[0] <= clock {
-            completed_procs.push(procs[0].one_shot(clock));
-            sjf(procs, completed_procs, completed_procs.last().completion_time_yknow_pls)
-        } else {
-            clock += 1;
-            sjf(procs, completed_procs, clock)
+        let mut i = 0;
+        while i < procs.len() {
+            if procs[i].arrival <= clock {
+                let mut done_proc: Process;
+                (done_proc, clock) = procs[i].one_shot(clock);
+                done_proc.turnaround = done_proc.calc_turn();
+                done_proc.waiting = done_proc.calc_wait();
+                completed.push(done_proc);
+                procs.remove(i);
+                return sjf(procs, completed, clock);
+            } else {
+                i += 1
+            }
         }
+        sjf(procs, completed, clock + 1)
     }
 }
