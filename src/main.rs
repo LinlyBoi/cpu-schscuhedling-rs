@@ -77,6 +77,7 @@ impl Process {
 }
 
 // pub fn srt(procs: Vec<Process>, q: i32) -> Vec<Process> {
+// procs.sort_by(|a, b| a.arrival.cmp(&b.arrival));
 //     let mut smallest = procs[0];
 //     let mut current = 0;
 //     let mut completed: Vec<Process> = vec![];
