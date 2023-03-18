@@ -99,16 +99,21 @@ pub fn fifo(mut procs: Vec<Process>) -> Vec<Process> {
     completed
 }
 
-pub fn sjf(mut procs: Vec<Process>, mut completed: Vec<Process>) -> Vec<Process> {
-    procs.sort_by(|a, b| a.arrival.cmp(&b.arrival));
+pub fn sjf(mut procs: Vec<Process>, mut completed: Vec<Process>, clock_update: i32) -> Vec<Process> {
+    procs.sort_unstable_by_key(|proc| (proc.arrival, proc.burst));
 
-    let mut clock: i32 = 0;
+    let mut clock: i32 = clock_update;
     let mut completed_procs: Vec<Process> = vec![];
 
-    while procs.len() > 0 {
-        if procs.is_empty() {
-            completed_procs
+    if procs.is_empty() {
+        completed_procs
+    } else {
+        if procs[0] <= clock {
+            completed_procs.push(procs[0].one_shot(clock));
+            sjf(procs, completed_procs, completed_procs.last().completion_time_yknow_pls)
         } else {
+            clock += 1;
+            sjf(procs, completed_procs, clock)
         }
     }
 }
