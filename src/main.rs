@@ -52,13 +52,13 @@ pub struct Process {
     completed: bool,
 }
 impl Process {
-    pub fn proc(mut self, q: i32, current: i32) -> i32 {
+    pub fn proc(mut self, q: i32, current: i32) -> (Process, i32, i32) {
         self.remaining -= q;
-        if self.remaining == 0 {
-            self.completed = true;
-            self.completion_time = current + q;
+        if self.remaining > 0 {
+            (self, self.remaining - q, current + q)
+        } else {
+            (self, 0, current)
         }
-        current + q
     }
     pub fn calc_turn(self) -> i32 {
         self.completion_time - self.arrival
@@ -70,8 +70,6 @@ impl Process {
         self.completion_time = current + self.remaining;
         self.completed = true;
         self.remaining = 0;
-        self.calc_turn();
-        self.calc_wait();
         (self, self.completion_time)
     }
 }
@@ -111,7 +109,6 @@ pub fn sjf(mut procs: Vec<Process>, mut completed: Vec<Process>) -> Vec<Process>
         if procs.is_empty() {
             completed_procs
         } else {
-            
         }
     }
 }
