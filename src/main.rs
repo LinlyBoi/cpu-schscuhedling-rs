@@ -28,13 +28,12 @@ fn main() {
             waiting: 0,
             remaining: temp_burst,
             completion_time: 0,
-            completed: false,
         };
         processes.push(temp_proc);
         num += 1;
     }
     println!("sorting!");
-    let sorted = sjf(processes, vec![], 0);
+    let sorted = round_robin(processes, vec![], 0, 2);
     println!("You've entered: ");
     for proc in sorted {
         println!("{:#?}", proc)
@@ -49,15 +48,17 @@ pub struct Process {
     waiting: i32,
     remaining: i32,
     completion_time: i32,
-    completed: bool,
 }
 impl Process {
-    pub fn proc(mut self, q: i32, current: i32) -> (Process, i32, i32) {
-        self.remaining -= q;
-        if self.remaining > 0 {
+    pub fn quan_zap(self, q: i32, current: i32) -> (Process, i32, i32) {
+        if q < 0 {
+            println!("Why would you ever do this?");
+            return (self, 0, 0);
+        }
+        if self.remaining >= q {
             (self, self.remaining - q, current + q)
         } else {
-            (self, 0, current)
+            (self, 0, current + self.remaining)
         }
     }
     pub fn calc_turn(self) -> i32 {
@@ -68,7 +69,6 @@ impl Process {
     }
     pub fn one_shot(mut self, current: i32) -> (Process, i32) {
         self.completion_time = current + self.remaining;
-        self.completed = true;
         self.remaining = 0;
         (self, self.completion_time)
     }
@@ -121,3 +121,37 @@ pub fn sjf(mut procs: Vec<Process>, mut completed: Vec<Process>, mut clock: i32)
         sjf(procs, completed, clock + 1)
     }
 }
+// pub fn round_robin(
+//     mut procs: Vec<Process>,
+//     mut completed: Vec<Process>,
+//     mut clock: i32,
+//     q: i32,
+// ) -> Vec<Process> {
+//     if procs.is_empty() {
+//         completed
+//     } else {
+//         let mut done_proc: Process;
+//         let mut i = 0;
+//         while i < procs.len() {
+//             if procs[i].arrival <= clock {
+//                 (done_proc, done_proc.remaining, clock) = procs[i].quan_zap(q, clock);
+//                 if done_proc.remaining == 0 {
+//                     done_proc.completion_time = clock;
+//                     procs.remove(i);
+//                     done_proc.turnaround = done_proc.calc_turn();
+//                     done_proc.waiting = done_proc.calc_wait();
+//                     completed.push(done_proc);
+//                     return round_robin(procs, completed, clock, q);
+//                 } else {
+//                     procs.remove(i);
+//                     procs.push(done_proc);
+//                     return round_robin(procs, completed, clock, q);
+//                 }
+//             } else {
+//                 i += 1
+//             }
+//         }
+//         round_robin(procs, completed, clock + 1, q)
+//     }
+// }
+// This code sucks!
