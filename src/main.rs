@@ -33,7 +33,7 @@ fn main() {
         num += 1;
     }
     println!("sorting!");
-    let sorted = round_robin(processes, 10);
+    let sorted = round_robin(processes, 100);
     // let sorted = round_robin(processes, vec![], 0, 2);
     println!("You've entered: ");
     for proc in sorted {
@@ -139,7 +139,7 @@ pub fn round_robin(procs: Vec<Process>, q: i32) -> Vec<Process> {
         if !buffer.is_empty() {
             for proc in buffer.to_owned() {
                 if buffer.is_empty() {
-                    break;
+                    continue;
                 }
                 if proc.arrival <= current_time {
                     in_cpu.push(proc);
