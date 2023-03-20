@@ -33,7 +33,7 @@ fn main() {
         num += 1;
     }
     println!("sorting!");
-    let sorted = round_robin(processes, 100);
+    let sorted = round_robin(processes, 2);
     // let sorted = round_robin(processes, vec![], 0, 2);
     println!("You've entered: ");
     for proc in sorted {
@@ -130,23 +130,26 @@ pub fn sjf(mut procs: Vec<Process>, mut completed: Vec<Process>, mut clock: i32)
     }
 }
 pub fn round_robin(procs: Vec<Process>, q: i32) -> Vec<Process> {
-    let mut buffer = procs;
+    let mut buffer = procs.to_owned();
+    buffer.sort_by(|a, b| a.arrival.cmp(&b.arrival));
     let mut current_time = 0;
     let mut in_cpu: Vec<Process> = vec![];
     let mut done: Vec<Process> = vec![];
     loop {
-        let mut counter = 0;
-        for proc in buffer.to_owned() {
-            if proc.arrival <= current_time {
-                in_cpu.push(proc);
-                buffer.remove(counter);
-            }
-            counter += 1;
+        let ready: Vec<&Process> = buffer
+            .iter()
+            .filter(|proc| proc.remaining <= current_time)
+            .collect();
+        buffer
+            .to_owned()
+            .retain(|&proc| proc.remaining > current_time);
+        for proc in ready.to_owned() {
+            in_cpu.insert(0, *proc);
         }
         match in_cpu.to_owned().first_mut() {
             Some(proc) => {
                 (proc.remaining, current_time) = proc.quan_zap(q, current_time);
-                if proc.remaining == 0 {
+                if proc.remaining <= 0 {
                     proc.completion_time = current_time;
                     proc.turnaround = proc.calc_turn();
                     proc.waiting = proc.calc_wait();
@@ -159,7 +162,7 @@ pub fn round_robin(procs: Vec<Process>, q: i32) -> Vec<Process> {
             None => current_time += 1,
         }
 
-        if in_cpu.is_empty() && buffer.is_empty() {
+        if done.len() == procs.len() {
             break;
         }
     }
