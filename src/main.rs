@@ -33,7 +33,8 @@ fn main() {
         num += 1;
     }
     println!("sorting!");
-    let sorted = round_robin(processes, vec![], 0, 2);
+    let sorted = round_robin(processes, 10);
+    // let sorted = round_robin(processes, vec![], 0, 2);
     println!("You've entered: ");
     for proc in sorted {
         println!("{:#?}", proc)
@@ -50,15 +51,15 @@ pub struct Process {
     completion_time: i32,
 }
 impl Process {
-    pub fn quan_zap(self, q: i32, current: i32) -> (Process, i32, i32) {
+    pub fn quan_zap(self, q: i32, current: i32) -> (i32, i32) {
         if q < 0 {
             println!("Why would you ever do this?");
-            return (self, 0, 0);
+            return (0, 0);
         }
         if self.remaining >= q {
-            (self, self.remaining - q, current + q)
+            (self.remaining - q, current + q)
         } else {
-            (self, 0, current + self.remaining)
+            (0, current + self.remaining)
         }
     }
     pub fn calc_turn(self) -> i32 {
@@ -71,6 +72,13 @@ impl Process {
         self.completion_time = current + self.remaining;
         self.remaining = 0;
         (self, self.completion_time)
+    }
+    pub fn robin_zap(self, q: i32) -> i32 {
+        if self.remaining >= q {
+            self.remaining - q
+        } else {
+            0
+        }
     }
 }
 
@@ -121,37 +129,46 @@ pub fn sjf(mut procs: Vec<Process>, mut completed: Vec<Process>, mut clock: i32)
         sjf(procs, completed, clock + 1)
     }
 }
-// pub fn round_robin(
-//     mut procs: Vec<Process>,
-//     mut completed: Vec<Process>,
-//     mut clock: i32,
-//     q: i32,
-// ) -> Vec<Process> {
-//     if procs.is_empty() {
-//         completed
-//     } else {
-//         let mut done_proc: Process;
-//         let mut i = 0;
-//         while i < procs.len() {
-//             if procs[i].arrival <= clock {
-//                 (done_proc, done_proc.remaining, clock) = procs[i].quan_zap(q, clock);
-//                 if done_proc.remaining == 0 {
-//                     done_proc.completion_time = clock;
-//                     procs.remove(i);
-//                     done_proc.turnaround = done_proc.calc_turn();
-//                     done_proc.waiting = done_proc.calc_wait();
-//                     completed.push(done_proc);
-//                     return round_robin(procs, completed, clock, q);
-//                 } else {
-//                     procs.remove(i);
-//                     procs.push(done_proc);
-//                     return round_robin(procs, completed, clock, q);
-//                 }
-//             } else {
-//                 i += 1
-//             }
-//         }
-//         round_robin(procs, completed, clock + 1, q)
-//     }
-// }
+pub fn round_robin(procs: Vec<Process>, q: i32) -> Vec<Process> {
+    let mut buffer = procs;
+    let mut current_time = 0;
+    let mut in_cpu: Vec<Process> = vec![];
+    let mut done: Vec<Process> = vec![];
+    while !buffer.is_empty() || !in_cpu.is_empty() {
+        let mut counter = 0;
+        if !buffer.is_empty() {
+            for proc in buffer.to_owned() {
+                if buffer.is_empty() {
+                    break;
+                }
+                if proc.arrival <= current_time {
+                    in_cpu.push(proc);
+                    buffer.remove(counter);
+                }
+                counter += 1;
+            }
+        }
+        if !in_cpu.is_empty() {
+            let mut current_proc = in_cpu.remove(0);
+            if current_proc.remaining < q {
+                current_time += current_proc.remaining;
+            } else {
+                current_time += q;
+            }
+            current_proc.remaining = current_proc.robin_zap(q);
+            if current_proc.remaining == 0 {
+                current_proc.completion_time = current_time;
+                current_proc.turnaround = current_proc.calc_turn();
+                current_proc.waiting = current_proc.calc_wait();
+                done.push(current_proc);
+            } else {
+                in_cpu.push(current_proc);
+            }
+        } else {
+            current_time += 1;
+        }
+    }
+    done
+}
+
 // This code sucks!
