@@ -134,38 +134,33 @@ pub fn round_robin(procs: Vec<Process>, q: i32) -> Vec<Process> {
     let mut current_time = 0;
     let mut in_cpu: Vec<Process> = vec![];
     let mut done: Vec<Process> = vec![];
-    while !buffer.is_empty() || !in_cpu.is_empty() {
+    loop {
         let mut counter = 0;
-        if !buffer.is_empty() {
-            for proc in buffer.to_owned() {
-                if buffer.is_empty() {
-                    continue;
-                }
-                if proc.arrival <= current_time {
-                    in_cpu.push(proc);
-                    buffer.remove(counter);
-                }
-                counter += 1;
+        for proc in buffer.to_owned() {
+            if proc.arrival <= current_time {
+                in_cpu.push(proc);
+                buffer.remove(counter);
             }
+            counter += 1;
         }
-        if !in_cpu.is_empty() {
-            let mut current_proc = in_cpu.remove(0);
-            if current_proc.remaining < q {
-                current_time += current_proc.remaining;
-            } else {
-                current_time += q;
+        match in_cpu.to_owned().first_mut() {
+            Some(proc) => {
+                (proc.remaining, current_time) = proc.quan_zap(q, current_time);
+                if proc.remaining == 0 {
+                    proc.completion_time = current_time;
+                    proc.turnaround = proc.calc_turn();
+                    proc.waiting = proc.calc_wait();
+                    done.push(proc.to_owned());
+                } else {
+                    in_cpu.push(proc.to_owned())
+                }
+                in_cpu.remove(0);
             }
-            current_proc.remaining = current_proc.robin_zap(q);
-            if current_proc.remaining == 0 {
-                current_proc.completion_time = current_time;
-                current_proc.turnaround = current_proc.calc_turn();
-                current_proc.waiting = current_proc.calc_wait();
-                done.push(current_proc);
-            } else {
-                in_cpu.push(current_proc);
-            }
-        } else {
-            current_time += 1;
+            None => current_time += 1,
+        }
+
+        if in_cpu.is_empty() && buffer.is_empty() {
+            break;
         }
     }
     done
