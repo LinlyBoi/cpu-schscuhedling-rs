@@ -135,37 +135,59 @@ pub fn round_robin(procs: Vec<Process>, q: i32) -> Vec<Process> {
     let mut current_time = 0;
     let mut in_cpu: Vec<Process> = vec![];
     let mut done: Vec<Process> = vec![];
+    let mut last: Process = Process {
+        arrival: 0,
+        burst: 0,
+        completion_time: 0,
+        remaining: 0,
+        turnaround: 0,
+        waiting: 0,
+    };
     loop {
-        let ready: Vec<&Process> = buffer
-            .iter()
-            .filter(|proc| proc.arrival <= current_time)
-            .collect();
-        buffer
-            .to_owned()
-            .retain(|&proc| proc.arrival > current_time);
-        for proc in ready.to_owned() {
-            in_cpu.insert(0, *proc);
+        let (ready, not_ready) = check_arrival(buffer, current_time);
+        buffer = not_ready;
+        in_cpu = into_cpu(ready.to_owned(), in_cpu);
+        if last.remaining > 0 {
+            in_cpu.push(last)
         }
-        // ready.iter().map(|proc| in_cpu.insert(0, **proc));
-        match in_cpu.to_owned().first_mut() {
-            Some(proc) => {
-                (proc.remaining, current_time) = proc.quan_zap(q, current_time);
-                if proc.remaining == 0 {
-                    proc.completion_time = current_time;
-                    proc.turnaround = proc.calc_turn();
-                    proc.waiting = proc.calc_wait();
-                    done.push(proc.to_owned());
-                } else {
-                    in_cpu.push(proc.to_owned())
-                }
-                in_cpu.remove(0);
-            }
-            None => current_time += 1,
+        if !in_cpu.is_empty() {
+            last = in_cpu.remove(0);
+            (last.remaining, current_time) = last.quan_zap(q, current_time);
+            done = check_done(last, current_time, done);
         }
-
+        println!("{}", done.len());
+        println!("{}, {}", buffer.len(), ready.len());
         if done.len() == procs.len() {
             break;
         }
+    }
+    done
+}
+pub fn check_arrival(buffer: Vec<Process>, current_time: i32) -> (Vec<Process>, Vec<Process>) {
+    let mut ready: Vec<Process> = vec![];
+    let mut not_ready: Vec<Process> = vec![];
+    for proc in buffer {
+        if proc.remaining <= current_time {
+            ready.push(proc);
+        } else {
+            not_ready.push(proc);
+        }
+    }
+
+    (ready, not_ready)
+}
+pub fn into_cpu(ready: Vec<Process>, mut cpu: Vec<Process>) -> Vec<Process> {
+    for proc in ready {
+        cpu.push(proc);
+    }
+    cpu
+}
+pub fn check_done(mut proc: Process, current_time: i32, mut done: Vec<Process>) -> Vec<Process> {
+    if proc.remaining == 0 {
+        proc.completion_time = current_time;
+        proc.turnaround = proc.calc_turn();
+        proc.waiting = proc.calc_wait();
+        done.push(proc);
     }
     done
 }
