@@ -138,18 +138,19 @@ pub fn round_robin(procs: Vec<Process>, q: i32) -> Vec<Process> {
     loop {
         let ready: Vec<&Process> = buffer
             .iter()
-            .filter(|proc| proc.remaining <= current_time)
+            .filter(|proc| proc.arrival <= current_time)
             .collect();
         buffer
             .to_owned()
-            .retain(|&proc| proc.remaining > current_time);
+            .retain(|&proc| proc.arrival > current_time);
         for proc in ready.to_owned() {
             in_cpu.insert(0, *proc);
         }
+        // ready.iter().map(|proc| in_cpu.insert(0, **proc));
         match in_cpu.to_owned().first_mut() {
             Some(proc) => {
                 (proc.remaining, current_time) = proc.quan_zap(q, current_time);
-                if proc.remaining <= 0 {
+                if proc.remaining == 0 {
                     proc.completion_time = current_time;
                     proc.turnaround = proc.calc_turn();
                     proc.waiting = proc.calc_wait();
