@@ -1,4 +1,5 @@
 use std::io;
+pub mod rr;
 fn main() {
     // Take user input
     let proc_num: i32;
@@ -33,7 +34,7 @@ fn main() {
         num += 1;
     }
     println!("sorting!");
-    let sorted = round_robin(processes, 2);
+    let sorted = rr::round_robin(processes, 1);
     // let sorted = round_robin(processes, vec![], 0, 2);
     println!("You've entered: ");
     for proc in sorted {
